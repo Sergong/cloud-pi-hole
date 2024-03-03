@@ -1,0 +1,6 @@
+cloudpihole:
+  hosts:
+    cloudpi-hole:
+      ansible_host: 34.139.70.110 
+      ansible_user: serge_meeuwsen_gmail_com
+

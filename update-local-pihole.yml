@@ -1,0 +1,46 @@
+---
+- name: Playbook to update local pi-hole if needed
+  hosts: localpi
+
+  vars:
+    # for possible commands, check https://github.com/pi-hole/web/blob/fb1b5c317e52ebb22380daf05fc94dddf001d6d7/api.php
+    api_command: "versions"
+    pi_url: "http://ubuntu.local/admin/api.php?{{ api_command }}&auth={{ pi_token }}"
+
+  tasks:
+    - name: Get pi-hole status
+      ansible.builtin.uri:
+        url: "{{ pi_url }}"
+        return_content: true
+      register: url_result
+      delegate_to: localhost
+
+    - name: Ensure return_content is proper json
+      ansible.builtin.set_fact:
+        pi_hole_versions: "{{ url_result.content | from_json }}"
+
+    - name: Docker needs updating
+      when:
+        - pi_hole_versions.docker_current != pi_hole_versions.docker_latest
+      block:
+        - name: Show the update message
+          ansible.builtin.debug:
+            msg: "There is a newer version available!"
+
+        - name: Give user option to cancel
+          ansible.builtin.pause:
+            prompt: |
+              The update requires that the router's DNS is NOT set to redirect to pi-hole.
+              Are you sure you want to continue? (Y(es)/N(o))
+          register: prompt_result
+
+        - name: Ensure update tasks are run
+          ansible.builtin.include_role:
+            name: install_update_pihole_docker
+          when: (prompt_result.user_input | lower) == "y"
+
+    - name: Show Docker is up to date message
+      ansible.builtin.debug:
+        msg: "No new versions found."
+      when:
+        - pi_hole_versions.docker_current == pi_hole_versions.docker_latest

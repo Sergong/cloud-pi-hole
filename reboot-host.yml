@@ -1,0 +1,9 @@
+---
+- name: Reboot Host
+  hosts: all # localpi # cloudpihole 
+  become: true
+
+  tasks:
+    - name: Reboot {{ inventory_hostname }} host
+      reboot:
+        msg: Rebooting {{ inventory_hostname }}

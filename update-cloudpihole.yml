@@ -1,0 +1,13 @@
+- name: Update Pi-Hole
+  hosts: cloudpihole
+  become: true
+
+  tasks:
+    - name: Update Pi-Hole on host; {{ inventory_hostname }}
+      ansible.builtin.command: pihole -up
+      register: update_result
+      changed_when: update_result.changed
+
+    - name: Show update result
+      ansible.builtin.debug:
+        var: update_result

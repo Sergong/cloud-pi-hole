@@ -1,0 +1,2 @@
+- name: linux_updates 
+  src: https://github.com/Sergong/linux_updates.git
