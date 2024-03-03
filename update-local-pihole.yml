@@ -1,6 +1,6 @@
 ---
 - name: Playbook to update local pi-hole if needed
-  hosts: localpi
+  hosts: pi4
 
   vars:
     # for possible commands, check https://github.com/pi-hole/web/blob/fb1b5c317e52ebb22380daf05fc94dddf001d6d7/api.php

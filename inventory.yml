@@ -4,3 +4,8 @@ cloudpihole:
       ansible_host: 34.139.70.110 
       ansible_user: serge_meeuwsen_gmail_com
 
+pi4:
+  hosts:
+    ubuntu:
+      ansible_host: 192.168.1.144 
+      ansible_user: ubuntu
