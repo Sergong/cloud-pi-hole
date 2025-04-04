@@ -3,25 +3,53 @@
   hosts: pi4
 
   vars:
-    # for possible commands, check https://github.com/pi-hole/web/blob/fb1b5c317e52ebb22380daf05fc94dddf001d6d7/api.php
-    api_command: "versions"
-    pi_url: "http://ubuntu.local/admin/api.php?{{ api_command }}&auth={{ pi_token }}"
+    # for possible commands, check local api documentation at https://ubuntu.local/api/docs/#
+    pihole_base_url: "https://ubuntu.local/api/"
+    pihole_auth_url: "{{ pihole_base_url }}auth"
+    pihole_password: "{{ pi_auth_pass }}"  # Encrypted with ansible-vault in group_vars/all
+    # pi_pass is also set in group_vars/all and used to pass the password environment variable at container start
+    # change this to change the p-hole password
 
   tasks:
-    - name: Get pi-hole status
+    - name: Authenticate to Pi-hole API
       ansible.builtin.uri:
-        url: "{{ pi_url }}"
-        return_content: true
-      register: url_result
-      delegate_to: localhost
+        url: "{{ pihole_auth_url }}"
+        method: POST
+        body_format: json
+        body:
+          password: "{{ pihole_password }}"
+        validate_certs: false  # Required for self-signed certs (-k in curl)
+        status_code: 200     # Expected successful status code
+      register: auth_response
+      changed_when: false    # This is a read-only operation
+      failed_when:
+        - auth_response.status != 200
+        - "'sid' not in auth_response.json"
 
-    - name: Ensure return_content is proper json
+    - name: Store session ID in fact
       ansible.builtin.set_fact:
-        pi_hole_versions: "{{ url_result.content | from_json }}"
+        pihole_sid: "{{ auth_response.json.session.sid }}"
+
+    - name: Example usage of SID in subsequent API call
+      ansible.builtin.uri:
+        url: "{{ pihole_base_url }}info/version?sid={{ pihole_sid }}"
+        method: GET
+        validate_certs: false
+        status_code: 200
+      register: host_version
+      when: pihole_sid is defined
+
+    - name: Set pi_hole_versions fact
+      ansible.builtin.set_fact:
+        pi_hole_versions: "{{ host_version.json.version }}"
+
+    - name: Show status
+      ansible.builtin.debug:
+        var: pi_hole_versions.docker
 
     - name: Docker needs updating
       when:
-        - pi_hole_versions.docker_current != pi_hole_versions.docker_latest
+        - pi_hole_versions.docker.local != pi_hole_versions.docker.remote
       block:
         - name: Show the update message
           ansible.builtin.debug:
@@ -34,6 +62,14 @@
               Are you sure you want to continue? (Y(es)/N(o))
           register: prompt_result
 
+        - name: Show password change notification
+          ansible.builtin.debug:
+            msg: >-
+              "Authentication password and Web password are different. Please ensure you update pi_auth_pass "
+              "after the upgrade is complete or authentication will fail during the next run!"
+          when:
+            - pi_auth_pass != pi_pass
+
         - name: Ensure update tasks are run
           ansible.builtin.include_role:
             name: install_update_pihole_docker
@@ -43,4 +79,4 @@
       ansible.builtin.debug:
         msg: "No new versions found."
       when:
-        - pi_hole_versions.docker_current == pi_hole_versions.docker_latest
+        - pi_hole_versions.docker.local == pi_hole_versions.docker.remote

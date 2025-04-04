@@ -1,0 +1,44 @@
+---
+- name: Authenticate to Pi-hole API and get session ID
+  hosts: pi4
+  vars:
+    pihole_base_url: "https://ubuntu.local/api/"
+    pihole_auth_url: "{{ pihole_base_url }}auth"
+    pihole_password: "{{ pi_pass }}"  # Encrypted with ansible-vault
+
+  tasks:
+    - name: Authenticate to Pi-hole API
+      ansible.builtin.uri:
+        url: "{{ pihole_auth_url }}"
+        method: POST
+        body_format: json
+        body:
+          password: "{{ pihole_password }}"
+        validate_certs: false  # Required for self-signed certs (-k in curl)
+        status_code: 200     # Expected successful status code
+      register: auth_response
+      changed_when: false    # This is a read-only operation
+      failed_when:
+        - auth_response.status != 200
+        - "'sid' not in auth_response.json"
+
+    - name: Store session ID in fact
+      ansible.builtin.set_fact:
+        pihole_sid: "{{ auth_response.json.session.sid }}"
+
+    - name: Example usage of SID in subsequent API call
+      ansible.builtin.uri:
+        url: "{{ pihole_base_url }}info/version?sid={{ pihole_sid }}"
+        method: GET
+        validate_certs: false
+        status_code: 200
+      register: host_version
+      when: pihole_sid is defined
+
+    - name: Ensure return_content is proper json
+      ansible.builtin.set_fact:
+        pi_hole_versions: "{{ host_version.json.version }}"
+
+    - name: Show status
+      ansible.builtin.debug:
+        var: pi_hole_versions.docker
