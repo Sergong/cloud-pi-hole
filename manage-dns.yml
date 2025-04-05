@@ -1,0 +1,43 @@
+---
+- name: Manage pi-hole local dns records
+  hosts: localhost
+  vars:
+    pihole_url: "https://ubuntu.local/"
+    pihole_password: "{{ pi_pass }}"  # Encrypted with ansible-vault
+    my_local_dns_a:
+      - host: api.crc.testing
+        ip: 100.81.90.68
+        state: present
+    my_local_dns_c:
+      - host: console-openshift-console.apps-crc.testing
+        target: api.crc.testing
+        state: present
+        ttl: 900
+
+  tasks:
+    - name: Ensure pip module is present on the remote host
+      ansible.builtin.pip:
+        name: pihole6api
+        state: present
+
+    - name: Manage A records
+      sbarbett.pihole.local_a_record:
+        url: "{{ pihole_url }}"
+        password: "{{ pihole_password }}"
+        host: "{{ item.host }}"
+        ip: "{{ item.ip }}"
+        state: "{{ item.state }}"
+      register: a_record_response
+      loop: "{{ my_local_dns_a }}"
+
+    - name: Manage A records
+      sbarbett.pihole.local_cname:
+        url: "{{ pihole_url }}"
+        password: "{{ pihole_password }}"
+        host: "{{ item.host }}"
+        target: "{{ item.target }}"
+        ttl: "{{ item.ttl }}"
+        state: "{{ item.state }}"
+      register: c_record_response
+      loop: "{{ my_local_dns_c }}"
+
