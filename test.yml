@@ -28,17 +28,17 @@
 
     - name: Example usage of SID in subsequent API call
       ansible.builtin.uri:
-        url: "{{ pihole_base_url }}info/version?sid={{ pihole_sid }}"
+        url: "{{ pihole_base_url }}dns/customdns?sid={{ pihole_sid }}"
         method: GET
         validate_certs: false
         status_code: 200
-      register: host_version
+      register: pihole_response
       when: pihole_sid is defined
 
-    - name: Ensure return_content is proper json
-      ansible.builtin.set_fact:
-        pi_hole_versions: "{{ host_version.json.version }}"
+    # - name: Ensure return_content is proper json
+    #   ansible.builtin.set_fact:
+    #     pi_hole_versions: "{{ host_version.json.version }}"
 
-    - name: Show status
+    - name: Show response
       ansible.builtin.debug:
-        var: pi_hole_versions.docker
+        var: pi_hole_response
