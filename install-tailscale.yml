@@ -7,7 +7,15 @@
 - name: Install tailscale using the tailscale role from collection
   hosts: pizero
 
+  pre_tasks:
+    - name: Set variable
+      ansible.builtin.set_fact:
+        tailscale_authkey: "{{ lookup('env', 'TAILSCALE_KEY') }}"
+    - name: Ensure authentication works
+      ansible.builtin.assert:
+        that: tailscale_authkey | length > 0
+        fail_msg: "TAILSCALE_KEY env variable not found!"
+
   roles:
     - role: artis3n.tailscale.device
-      vars:
-        tailscale_authkey: "{{ lookup('env', 'TAILSCALE_KEY') }}"
+        
