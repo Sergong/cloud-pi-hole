@@ -1,0 +1,17 @@
+---
+- name: Playbook to install  local pi-hole
+  hosts: pizero
+
+  vars:
+    # for possible commands, check local api documentation at https://ubuntu.local/api/docs/#
+    pihole_base_url: "https://smpizero2.broadband/api/"
+    pihole_auth_url: "{{ pihole_base_url }}auth"
+    pihole_password: "{{ pi_auth_pass }}"  # Encrypted with ansible-vault in group_vars/all
+    # pi_pass is also set in group_vars/all and used to pass the password environment variable at container start
+    # change this to change the p-hole password
+
+  tasks:
+    - name: Ensure pihole podman container is started
+      ansible.builtin.include_role:
+        name: install_update_pihole_podman
+

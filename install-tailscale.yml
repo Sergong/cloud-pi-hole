@@ -1,0 +1,13 @@
+---
+#
+# Prereqs: 
+# - the artis3n.tailscale collection
+# - TAILSCALE_KEY environment var (ensure the key hasn't expired!
+#
+- name: Install tailscale using the tailscale role from collection
+  hosts: pizero
+
+  roles:
+    - role: artis3n.tailscale.device
+      vars:
+        tailscale_authkey: "{{ lookup('env', 'TAILSCALE_KEY') }}"

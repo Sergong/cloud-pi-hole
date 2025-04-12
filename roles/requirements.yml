@@ -4,3 +4,6 @@
 - name: install_update_pihole_docker 
   src: https://github.com/Sergong/install_update_pihole_docker.git
   
+- name: install_update_pihole_podman 
+  src: https://github.com/Sergong/install_update_pihole_podman.git
+

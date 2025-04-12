@@ -13,6 +13,6 @@ pi4:
 
 pizero:
   hosts:
-    pizero:
+    pizero2:
       ansible_host: 192.168.1.181
       ansible_user: smeeuwsen

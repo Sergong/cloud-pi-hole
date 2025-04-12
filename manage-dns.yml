@@ -2,7 +2,7 @@
 - name: Manage pi-hole local dns records
   hosts: localhost
   vars:
-    pihole_url: "https://ubuntu.local/"
+    pihole_url: "https://smpizero2.broadband/"
     pihole_password: "{{ pi_pass }}"  # Encrypted with ansible-vault
     my_local_dns_a:
       - host: api.crc.testing
@@ -30,7 +30,7 @@
       register: a_record_response
       loop: "{{ my_local_dns_a }}"
 
-    - name: Manage A records
+    - name: Manage C records
       sbarbett.pihole.local_cname:
         url: "{{ pihole_url }}"
         password: "{{ pihole_password }}"
